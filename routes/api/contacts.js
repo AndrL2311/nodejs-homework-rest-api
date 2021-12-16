@@ -1,24 +1,41 @@
-const express = require('express')
-const router = express.Router()
+const express = require("express");
+const router = express.Router();
 
-router.get('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+/*
 
-router.get('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+2. Получить один контакт по id. --> getContactById
+3. Добавить контакт в список. --> addContact
+4. Обновить контакт по id. --> updateById
+5. Удалить контакт по id. --> removeContact
 
-router.post('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+*/
 
-router.delete('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+const contactsOperations = require("../../model");
 
-router.patch('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+// 1. Получить все контакты.
+router.get("/", async (req, res, next) => {
+  try {
+    const contacts = await contactsOperations.listContacts();
+    res.json(contacts);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
-module.exports = router
+router.get("/:contactId", async (req, res, next) => {
+  res.json({ message: "template message" });
+});
+
+router.post("/", async (req, res, next) => {
+  res.json({ message: "template message" });
+});
+
+router.delete("/:contactId", async (req, res, next) => {
+  res.json({ message: "template message" });
+});
+
+router.patch("/:contactId", async (req, res, next) => {
+  res.json({ message: "template message" });
+});
+
+module.exports = router;
