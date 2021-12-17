@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const Joi = require("joi");
 
 /*
 3. Добавить контакт в список. --> addContact
@@ -9,6 +10,12 @@ const router = express.Router();
 */
 
 const contactsOperations = require("../../model");
+
+const joiSchema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().required(),
+  phone: Joi.string().required(),
+});
 
 // 1. Получить все контакты.
 router.get("/", async (req, res, next) => {
@@ -40,6 +47,11 @@ router.get("/:contactId", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   const body = req.body;
   try {
+    const { error } = joiSchema.validate(body);
+    if (error) {
+      error.status = 400;
+      throw error;
+    }
     const newContact = await contactsOperations.addContact(body);
     res.status(201).json(newContact);
   } catch (err) {
