@@ -22,8 +22,20 @@ router.get("/", async (req, res, next) => {
   }
 });
 
+// 2. Получить один контакт по id.
 router.get("/:contactId", async (req, res, next) => {
-  res.json({ message: "template message" });
+  const { contactId } = req.params;
+  try {
+    const contact = await contactsOperations.getContactById(contactId);
+    if (!contact) {
+      return res.status(404).json({ message: "Not found" });
+    }
+    res.json(contact);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+
+  // res.json({ message: "template message" });
 });
 
 router.post("/", async (req, res, next) => {
