@@ -38,7 +38,13 @@ router.get("/:contactId", async (req, res, next) => {
 
 // 3. Добавить контакт в список.
 router.post("/", async (req, res, next) => {
-  res.json({ message: "template message" });
+  const body = req.body;
+  try {
+    const newContact = await contactsOperations.addContact(body);
+    res.status(201).json(newContact);
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.delete("/:contactId", async (req, res, next) => {

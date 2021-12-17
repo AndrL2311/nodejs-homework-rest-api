@@ -12,6 +12,9 @@ const contactsPath = path.join(__dirname, "contacts.json");
 5. Удалить контакт по id. --> removeContact
 
 */
+const updateContacts = async (contacts) => {
+  await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
+};
 
 const listContacts = async () => {
   const data = await fs.readFile(contactsPath);
@@ -30,11 +33,19 @@ const getContactById = async (contactId) => {
   return contact;
 };
 
-const removeContact = async (contactId) => {};
-
-const addContact = async (body) => {};
+const addContact = async (body) => {
+  // console.log(body);
+  const { name, email, phone } = body;
+  const newContact = { id: v4(), name, email, phone };
+  const contacts = await listContacts();
+  contacts.push(newContact);
+  await updateContacts(contacts);
+  return newContact;
+};
 
 const updateContact = async (contactId, body) => {};
+
+const removeContact = async (contactId) => {};
 
 module.exports = {
   listContacts,
