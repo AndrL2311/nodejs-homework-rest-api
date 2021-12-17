@@ -2,13 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Joi = require("joi");
 
-/*
-3. Добавить контакт в список. --> addContact
-4. Обновить контакт по id. --> updateById
-5. Удалить контакт по id. --> removeContact
-
-*/
-
 const contactsOperations = require("../../model");
 
 const joiSchema = Joi.object({
@@ -45,26 +38,62 @@ router.get("/:contactId", async (req, res, next) => {
 
 // 3. Добавить контакт в список.
 router.post("/", async (req, res, next) => {
-  const body = req.body;
+  // const body = req.body;
   try {
-    const { error } = joiSchema.validate(body);
+    const { error } = joiSchema.validate(req.body);
     if (error) {
       error.status = 400;
       throw error;
     }
-    const newContact = await contactsOperations.addContact(body);
+    const newContact = await contactsOperations.addContact(req.body);
     res.status(201).json(newContact);
   } catch (err) {
     next(err);
   }
 });
 
-router.delete("/:contactId", async (req, res, next) => {
-  res.json({ message: "template message" });
+// 4. Обновить контакт по id.
+router.put("/:contactId", async (req, res, next) => {
+  try {
+    const { error } = joiSchema.validate(req.body);
+    if (error) {
+      // const error = new Error("missing fields");
+      error.status = 400;
+      throw error;
+    }
+    const { contactId } = req.params;
+    // console.log(contactId);
+    const updateContact = await contactsOperations.updateContact(
+      contactId,
+      req.body
+    );
+    if (!updateContact) {
+      const error = new Error("Not found");
+      error.status = 404;
+      throw error;
+    }
+
+    res.json(updateContact);
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.patch("/:contactId", async (req, res, next) => {
-  res.json({ message: "template message" });
+// 5. Удалить контакт по id.
+router.delete("/:contactId", async (req, res, next) => {
+  const { contactId } = req.params;
+  try {
+    const deleteContact = await contactsOperations.removeContact(contactId);
+    if (!deleteContact) {
+      const error = new Error("Not found");
+      error.status = 404;
+      throw error;
+    }
+
+    res.json({ message: "contact deleted" });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

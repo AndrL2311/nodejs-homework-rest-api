@@ -43,9 +43,40 @@ const addContact = async (body) => {
   return newContact;
 };
 
-const updateContact = async (contactId, body) => {};
+const updateContact = async (contactId, body) => {
+  const { name, email, phone } = body;
+  const contacts = await listContacts();
 
-const removeContact = async (contactId) => {};
+  const idx = contacts.findIndex(
+    (item) => String(item.id) === String(contactId)
+  );
+  if (idx === -1) {
+    return null;
+  }
+
+  contacts[idx] = {
+    ...contacts[idx],
+    name,
+    email,
+    phone,
+  };
+  await updateContacts(contacts);
+  return contacts[idx];
+};
+
+const removeContact = async (contactId) => {
+  const contacts = await listContacts();
+  const idx = contacts.findIndex(
+    (item) => String(item.id) === String(contactId)
+  );
+  if (idx === -1) {
+    return null;
+  }
+
+  const removeContact = contacts.splice(idx, 1);
+  await updateContacts(contacts);
+  return removeContact;
+};
 
 module.exports = {
   listContacts,
