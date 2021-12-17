@@ -34,8 +34,6 @@ router.get("/:contactId", async (req, res, next) => {
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
-
-  // res.json({ message: "template message" });
 });
 
 router.post("/", async (req, res, next) => {
