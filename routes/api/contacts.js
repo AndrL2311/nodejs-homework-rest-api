@@ -1,24 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const Joi = require("joi");
 
-const { Contact } = require("../../model");
+const { Contact, joiSchema } = require("../../model");
 
-const joiSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string().required(),
+// 1. Получить все контакты.
+router.get("/", async (req, res, next) => {
+  try {
+    const contacts = await Contact.find();
+    res.json(contacts);
+  } catch (err) {
+    next(err);
+  }
 });
-
-// // 1. Получить все контакты.
-// router.get("/", async (req, res, next) => {
-//   try {
-//     const contacts = await contactsOperations.listContacts();
-//     res.json(contacts);
-//   } catch (err) {
-//     next(err);
-//   }
-// });
 
 // // 2. Получить один контакт по id.
 // router.get("/:contactId", async (req, res, next) => {

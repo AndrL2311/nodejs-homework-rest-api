@@ -1,7 +1,8 @@
-const Contact = require("./contact");
+const { Contact, joiSchema } = require("./contact");
 
 module.exports = {
   Contact,
+  joiSchema,
 };
 
 // const { v4 } = require("uuid");
