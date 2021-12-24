@@ -13,21 +13,24 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// // 2. Получить один контакт по id.
-// router.get("/:contactId", async (req, res, next) => {
-//   const { contactId } = req.params;
-//   try {
-//     const contact = await contactsOperations.getContactById(contactId);
-//     if (!contact) {
-//       const error = new Error("Not found");
-//       error.status = 404;
-//       throw error;
-//     }
-//     res.json(contact);
-//   } catch (err) {
-//     next(err);
-//   }
-// });
+// 2. Получить один контакт по id.
+router.get("/:contactId", async (req, res, next) => {
+  const { contactId } = req.params;
+  try {
+    const contact = await Contact.findById(contactId);
+    if (!contact) {
+      const error = new Error("Not found");
+      error.status = 404;
+      throw error;
+    }
+    res.json(contact);
+  } catch (err) {
+    if (err.message.includes("Cast to ObjectId failed")) {
+      err.status = 404;
+    }
+    next(err);
+  }
+});
 
 // 3. Добавить контакт в список.
 router.post("/", async (req, res, next) => {
