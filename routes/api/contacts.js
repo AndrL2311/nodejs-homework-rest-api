@@ -56,12 +56,11 @@ router.put("/:contactId", async (req, res, next) => {
   try {
     const { error } = joiSchema.validate(req.body);
     if (error) {
-      // const error = new Error("missing fields");
       error.status = 400;
       throw error;
     }
     const { contactId } = req.params;
-    // console.log(contactId);
+
     const updateContact = await Contact.findByIdAndUpdate(contactId, req.body, {
       new: true,
     });
@@ -80,21 +79,50 @@ router.put("/:contactId", async (req, res, next) => {
   }
 });
 
-// // 5. Удалить контакт по id.
-// router.delete("/:contactId", async (req, res, next) => {
-//   const { contactId } = req.params;
-//   try {
-//     const deleteContact = await contactsOperations.removeContact(contactId);
-//     if (!deleteContact) {
-//       const error = new Error("Not found");
-//       error.status = 404;
-//       throw error;
-//     }
+// 5. Удалить контакт по id.
+router.delete("/:contactId", async (req, res, next) => {
+  const { contactId } = req.params;
+  try {
+    const deleteContact = await Contact.findByIdAndRemove(contactId);
 
-//     res.json({ message: "contact deleted" });
-//   } catch (err) {
-//     next(err);
-//   }
-// });
+    if (!deleteContact) {
+      const error = new Error("Not found");
+      error.status = 404;
+      throw error;
+    }
+
+    res.json({ message: "contact deleted" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 6. Обновить поле статуса favorite
+router.patch("/:contactId/favorite", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { favorite } = req.body;
+
+    const updateContact = await Contact.findByIdAndUpdate(
+      contactId,
+      { favorite },
+      {
+        new: true,
+      }
+    );
+    if (!updateContact) {
+      const error = new Error("Not found");
+      error.status = 404;
+      throw error;
+    }
+
+    res.json(updateContact);
+  } catch (err) {
+    if (err.message.includes("validation failed")) {
+      err.status = 404;
+    }
+    next(err);
+  }
+});
 
 module.exports = router;
