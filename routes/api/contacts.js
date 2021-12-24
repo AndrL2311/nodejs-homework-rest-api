@@ -44,6 +44,9 @@ router.post("/", async (req, res, next) => {
     const newContact = await Contact.create(req.body);
     res.status(201).json(newContact);
   } catch (err) {
+    if (err.message.includes("validation failed")) {
+      err.status = 404;
+    }
     next(err);
   }
 });
