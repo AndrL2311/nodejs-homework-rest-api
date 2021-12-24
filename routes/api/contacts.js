@@ -118,7 +118,7 @@ router.patch("/:contactId/favorite", async (req, res, next) => {
 
     res.json(updateContact);
   } catch (err) {
-    if (err.message.includes("validation failed")) {
+    if (err.message.includes("failed for value")) {
       err.status = 404;
     }
     next(err);
