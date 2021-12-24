@@ -51,32 +51,34 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-// // 4. Обновить контакт по id.
-// router.put("/:contactId", async (req, res, next) => {
-//   try {
-//     const { error } = joiSchema.validate(req.body);
-//     if (error) {
-//       // const error = new Error("missing fields");
-//       error.status = 400;
-//       throw error;
-//     }
-//     const { contactId } = req.params;
-//     // console.log(contactId);
-//     const updateContact = await contactsOperations.updateContact(
-//       contactId,
-//       req.body
-//     );
-//     if (!updateContact) {
-//       const error = new Error("Not found");
-//       error.status = 404;
-//       throw error;
-//     }
+// 4. Обновить контакт по id.
+router.put("/:contactId", async (req, res, next) => {
+  try {
+    const { error } = joiSchema.validate(req.body);
+    if (error) {
+      // const error = new Error("missing fields");
+      error.status = 400;
+      throw error;
+    }
+    const { contactId } = req.params;
+    // console.log(contactId);
+    const updateContact = await Contact.findByIdAndUpdate(contactId, req.body, {
+      new: true,
+    });
+    if (!updateContact) {
+      const error = new Error("Not found");
+      error.status = 404;
+      throw error;
+    }
 
-//     res.json(updateContact);
-//   } catch (err) {
-//     next(err);
-//   }
-// });
+    res.json(updateContact);
+  } catch (err) {
+    if (err.message.includes("validation failed")) {
+      err.status = 404;
+    }
+    next(err);
+  }
+});
 
 // // 5. Удалить контакт по id.
 // router.delete("/:contactId", async (req, res, next) => {
