@@ -1,19 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const Joi = require("joi");
 
-const contactsOperations = require("../../model");
-
-const joiSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string().required(),
-});
+const { Contact, joiSchema } = require("../../model");
 
 // 1. Получить все контакты.
 router.get("/", async (req, res, next) => {
   try {
-    const contacts = await contactsOperations.listContacts();
+    const contacts = await Contact.find();
     res.json(contacts);
   } catch (err) {
     next(err);
@@ -24,7 +17,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:contactId", async (req, res, next) => {
   const { contactId } = req.params;
   try {
-    const contact = await contactsOperations.getContactById(contactId);
+    const contact = await Contact.findById(contactId);
     if (!contact) {
       const error = new Error("Not found");
       error.status = 404;
@@ -32,6 +25,9 @@ router.get("/:contactId", async (req, res, next) => {
     }
     res.json(contact);
   } catch (err) {
+    if (err.message.includes("Cast to ObjectId failed")) {
+      err.status = 404;
+    }
     next(err);
   }
 });
@@ -45,9 +41,12 @@ router.post("/", async (req, res, next) => {
       error.status = 400;
       throw error;
     }
-    const newContact = await contactsOperations.addContact(req.body);
+    const newContact = await Contact.create(req.body);
     res.status(201).json(newContact);
   } catch (err) {
+    if (err.message.includes("validation failed")) {
+      err.status = 404;
+    }
     next(err);
   }
 });
@@ -57,15 +56,59 @@ router.put("/:contactId", async (req, res, next) => {
   try {
     const { error } = joiSchema.validate(req.body);
     if (error) {
-      // const error = new Error("missing fields");
       error.status = 400;
       throw error;
     }
     const { contactId } = req.params;
-    // console.log(contactId);
-    const updateContact = await contactsOperations.updateContact(
+
+    const updateContact = await Contact.findByIdAndUpdate(contactId, req.body, {
+      new: true,
+    });
+    if (!updateContact) {
+      const error = new Error("Not found");
+      error.status = 404;
+      throw error;
+    }
+
+    res.json(updateContact);
+  } catch (err) {
+    if (err.message.includes("validation failed")) {
+      err.status = 404;
+    }
+    next(err);
+  }
+});
+
+// 5. Удалить контакт по id.
+router.delete("/:contactId", async (req, res, next) => {
+  const { contactId } = req.params;
+  try {
+    const deleteContact = await Contact.findByIdAndRemove(contactId);
+
+    if (!deleteContact) {
+      const error = new Error("Not found");
+      error.status = 404;
+      throw error;
+    }
+
+    res.json({ message: "contact deleted" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 6. Обновить поле статуса favorite
+router.patch("/:contactId/favorite", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { favorite } = req.body;
+
+    const updateContact = await Contact.findByIdAndUpdate(
       contactId,
-      req.body
+      { favorite },
+      {
+        new: true,
+      }
     );
     if (!updateContact) {
       const error = new Error("Not found");
@@ -75,23 +118,9 @@ router.put("/:contactId", async (req, res, next) => {
 
     res.json(updateContact);
   } catch (err) {
-    next(err);
-  }
-});
-
-// 5. Удалить контакт по id.
-router.delete("/:contactId", async (req, res, next) => {
-  const { contactId } = req.params;
-  try {
-    const deleteContact = await contactsOperations.removeContact(contactId);
-    if (!deleteContact) {
-      const error = new Error("Not found");
-      error.status = 404;
-      throw error;
+    if (err.message.includes("failed for value")) {
+      err.status = 404;
     }
-
-    res.json({ message: "contact deleted" });
-  } catch (err) {
     next(err);
   }
 });
