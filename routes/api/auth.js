@@ -1,6 +1,7 @@
 const express = require("express");
+const { BadRequest, Conflict } = require("http-errors");
 
-const { user } = require("../../model");
+const { User } = require("../../model");
 const { joiSchema } = require("../../model/user");
 
 const router = express.Router();
@@ -8,12 +9,22 @@ const router = express.Router();
 // registrations
 router.post("/register", async (req, res, next) => {
   try {
-    console.log(joiSchema);
     const { error } = joiSchema.validate(req.body);
+
     if (error) {
-      error.status = 400;
-      throw error;
+      console.log("gopa");
+      throw new BadRequest(error.message);
     }
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (user) {
+      throw new Conflict("Email in use");
+    }
+
+    const newUser = await User.create(req.body);
+    res.status(201).json({
+      user: { email: newUser.email, subscription: newUser.subscription },
+    });
   } catch (error) {
     next(error);
   }

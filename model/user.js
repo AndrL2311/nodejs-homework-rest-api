@@ -38,7 +38,6 @@ const joiSchema = Joi.object({
   password: Joi.string().min(6).required(),
   email: Joi.string().pattern(emailRegexp).required(),
 });
-console.log(joiSchema);
 
 const User = model("user", userSchema);
 
