@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-const { Contact, joiSchema } = require("../../model");
-
+const { Contact } = require("../../model");
+const { joiSchema } = require("../../model/contact");
 // 1. Получить все контакты.
 router.get("/", async (req, res, next) => {
   try {
