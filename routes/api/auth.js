@@ -12,7 +12,6 @@ router.post("/register", async (req, res, next) => {
     const { error } = joiSchema.validate(req.body);
 
     if (error) {
-      console.log("gopa");
       throw new BadRequest(error.message);
     }
     const { email, password } = req.body;
