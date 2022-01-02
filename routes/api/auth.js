@@ -16,7 +16,7 @@ router.post("/register", async (req, res, next) => {
       console.log(error);
       throw new BadRequest(error.message);
     }
-    const { email, password, subscription } = req.body;
+    const { email, password, subscription, token } = req.body;
     console.log(subscription);
     const user = await User.findOne({ email });
     if (user) {
@@ -28,6 +28,7 @@ router.post("/register", async (req, res, next) => {
       email,
       password: hashPassword,
       subscription,
+      token,
     });
     res.status(201).json({
       user: { email: newUser.email, subscription: newUser.subscription },
