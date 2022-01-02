@@ -31,7 +31,7 @@ const userSchema = Schema(
 const joiSchema = Joi.object({
   password: Joi.string().min(6).required(),
   email: Joi.string().pattern(emailRegexp).required(),
-  subscrition: Joi.string(),
+  subscription: Joi.string(),
   token: Joi.string(),
 });
 

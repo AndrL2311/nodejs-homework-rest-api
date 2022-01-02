@@ -1,5 +1,6 @@
 const express = require("express");
 const { BadRequest, Conflict } = require("http-errors");
+const bcrypt = require("bcryptjs");
 
 const { User } = require("../../model");
 const { joiSchema } = require("../../model/user");
@@ -12,15 +13,22 @@ router.post("/register", async (req, res, next) => {
     const { error } = joiSchema.validate(req.body);
 
     if (error) {
+      console.log(error);
       throw new BadRequest(error.message);
     }
-    const { email, password } = req.body;
+    const { email, password, subscription } = req.body;
+    console.log(subscription);
     const user = await User.findOne({ email });
     if (user) {
       throw new Conflict("Email in use");
     }
-
-    const newUser = await User.create(req.body);
+    const salt = await bcrypt.genSalt(10);
+    const hashPassword = await bcrypt.hash(password, salt);
+    const newUser = await User.create({
+      email,
+      password: hashPassword,
+      subscription,
+    });
     res.status(201).json({
       user: { email: newUser.email, subscription: newUser.subscription },
     });
