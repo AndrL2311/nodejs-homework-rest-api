@@ -10,7 +10,7 @@ const { authenticate } = require("../../middlewares");
 const router = express.Router();
 const { SECRET_KEY } = process.env;
 
-// registrations
+// Регистрация
 router.post("/signup", async (req, res, next) => {
   try {
     const { error } = joiRegisterSchema.validate(req.body);
@@ -39,6 +39,7 @@ router.post("/signup", async (req, res, next) => {
   }
 });
 
+// Логин
 router.post("/login", async (req, res, next) => {
   try {
     const { error } = joiLoginSchema.validate(req.body);
@@ -71,6 +72,7 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
+// Данные текущего пользователя по токину
 router.get("/current", authenticate, async (req, res) => {
   const { email, subscription } = req.user;
   res.json({
@@ -78,6 +80,7 @@ router.get("/current", authenticate, async (req, res) => {
   });
 });
 
+// Логаут
 router.get("/logout", authenticate, async (req, res) => {
   const { _id } = req.user;
   await User.findByIdAndUpdate(_id, { token: null });

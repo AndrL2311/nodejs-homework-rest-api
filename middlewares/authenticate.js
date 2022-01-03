@@ -4,6 +4,7 @@ const { Unauthorized } = require("http-errors");
 const { User } = require("../model");
 const { SECRET_KEY } = process.env;
 
+// Проверка токена
 const authenticate = async (req, res, next) => {
   try {
     const { authorization } = req.headers;

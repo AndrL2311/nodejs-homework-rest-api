@@ -40,8 +40,6 @@ router.get("/:contactId", async (req, res, next) => {
 
 // 3. Добавить контакт в список.
 router.post("/", authenticate, async (req, res, next) => {
-  // console.log(req.user);
-  // const body = req.body;
   try {
     const { error } = joiSchema.validate(req.body);
     if (error) {

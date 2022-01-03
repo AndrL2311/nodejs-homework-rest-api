@@ -32,7 +32,6 @@ const joiRegisterSchema = Joi.object({
   password: Joi.string().min(6).required(),
   email: Joi.string().pattern(emailRegexp).required(),
   subscription: Joi.string(),
-  //   token: Joi.string(),
 });
 
 const joiLoginSchema = Joi.object({
