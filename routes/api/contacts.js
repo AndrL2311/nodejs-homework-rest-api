@@ -23,15 +23,20 @@ router.get("/", authenticate, async (req, res, next) => {
 });
 
 // 2. Получить один контакт по id.
-router.get("/:contactId", async (req, res, next) => {
+router.get("/:contactId", authenticate, async (req, res, next) => {
   const { contactId } = req.params;
+  const { _id } = req.user;
   try {
-    const contact = await Contact.findById(contactId);
+    const contact = await Contact.findOne(
+      { _id: contactId, owner: _id },
+      "-createdAt -updatedAt"
+    );
     if (!contact) {
       const error = new Error("Not found");
       error.status = 404;
       throw error;
     }
+
     res.json(contact);
   } catch (err) {
     if (err.message.includes("Cast to ObjectId failed")) {
@@ -61,7 +66,7 @@ router.post("/", authenticate, async (req, res, next) => {
 });
 
 // 4. Обновить контакт по id.
-router.put("/:contactId", async (req, res, next) => {
+router.put("/:contactId", authenticate, async (req, res, next) => {
   try {
     const { error } = joiSchema.validate(req.body);
     if (error) {
@@ -69,10 +74,15 @@ router.put("/:contactId", async (req, res, next) => {
       throw error;
     }
     const { contactId } = req.params;
+    const { _id } = req.user;
 
-    const updateContact = await Contact.findByIdAndUpdate(contactId, req.body, {
-      new: true,
-    });
+    const updateContact = await Contact.findOneAndUpdate(
+      { _id: contactId, owner: _id },
+      req.body,
+      {
+        new: true,
+      }
+    );
     if (!updateContact) {
       const error = new Error("Not found");
       error.status = 404;
@@ -89,10 +99,15 @@ router.put("/:contactId", async (req, res, next) => {
 });
 
 // 5. Удалить контакт по id.
-router.delete("/:contactId", async (req, res, next) => {
+router.delete("/:contactId", authenticate, async (req, res, next) => {
   const { contactId } = req.params;
+  const { _id } = req.user;
+
   try {
-    const deleteContact = await Contact.findByIdAndRemove(contactId);
+    const deleteContact = await Contact.findOneAndRemove({
+      _id: contactId,
+      owner: _id,
+    });
 
     if (!deleteContact) {
       const error = new Error("Not found");
@@ -107,13 +122,14 @@ router.delete("/:contactId", async (req, res, next) => {
 });
 
 // 6. Обновить поле статуса favorite
-router.patch("/:contactId/favorite", async (req, res, next) => {
+router.patch("/:contactId/favorite", authenticate, async (req, res, next) => {
   try {
     const { contactId } = req.params;
     const { favorite } = req.body;
+    const { _id } = req.user;
 
-    const updateContact = await Contact.findByIdAndUpdate(
-      contactId,
+    const updateContact = await Contact.findOneAndUpdate(
+      { _id: contactId, owner: _id },
       { favorite },
       {
         new: true,
