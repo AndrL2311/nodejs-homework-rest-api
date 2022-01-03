@@ -1,10 +1,14 @@
 const express = require("express");
-const { BadRequest, Conflict, Unauthorized } = require("http-errors");
+const { BadRequest, Conflict, Unauthorized, NotFound } = require("http-errors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const { User } = require("../../model");
-const { joiRegisterSchema, joiLoginSchema } = require("../../model/user");
+const {
+  joiRegisterSchema,
+  joiLoginSchema,
+  joiSubscriptionSchema,
+} = require("../../model/user");
 const { authenticate } = require("../../middlewares");
 
 const router = express.Router();
@@ -85,6 +89,37 @@ router.get("/logout", authenticate, async (req, res) => {
   const { _id } = req.user;
   await User.findByIdAndUpdate(_id, { token: null });
   res.status(204).send();
+});
+
+// Обновить поле подписки subscription
+router.patch("/:userId/subscription", async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { subscription } = req.body;
+
+    const { error } = joiSubscriptionSchema.validate(req.body);
+    if (error) {
+      throw new BadRequest(error.message);
+    }
+
+    const updateUser = await User.findByIdAndUpdate(
+      userId,
+      { subscription },
+      {
+        new: true,
+      }
+    );
+    if (!updateUser) {
+      throw new NotFound(error.message);
+    }
+
+    res.json(updateUser);
+  } catch (error) {
+    if (error.message.includes("failed for value")) {
+      error.status = 404;
+    }
+    next(error);
+  }
 });
 
 module.exports = router;
