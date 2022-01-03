@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 
 const { User } = require("../../model");
 const { joiRegisterSchema, joiLoginSchema } = require("../../model/user");
+const { authenticate } = require("../../middlewares");
 
 const router = express.Router();
 const { SECRET_KEY } = process.env;
@@ -68,6 +69,13 @@ router.post("/login", async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+router.get("/current", authenticate, async (req, res, next) => {
+  const { email, subscription } = req.user;
+  res.json({
+    user: { email, subscription },
+  });
 });
 
 module.exports = router;

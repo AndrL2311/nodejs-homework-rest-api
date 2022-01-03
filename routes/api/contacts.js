@@ -4,10 +4,15 @@ const router = express.Router();
 const { authenticate } = require("../../middlewares");
 const { Contact } = require("../../model");
 const { joiSchema } = require("../../model/contact");
+
 // 1. Получить все контакты.
-router.get("/", async (req, res, next) => {
+router.get("/", authenticate, async (req, res, next) => {
   try {
-    const contacts = await Contact.find();
+    const { _id } = req.user;
+    const contacts = await Contact.find(
+      { owner: _id },
+      "-createdAt -updatedAt"
+    );
     res.json(contacts);
   } catch (err) {
     next(err);
@@ -35,7 +40,7 @@ router.get("/:contactId", async (req, res, next) => {
 
 // 3. Добавить контакт в список.
 router.post("/", authenticate, async (req, res, next) => {
-  console.log(req.user);
+  // console.log(req.user);
   // const body = req.body;
   try {
     const { error } = joiSchema.validate(req.body);
@@ -43,7 +48,8 @@ router.post("/", authenticate, async (req, res, next) => {
       error.status = 400;
       throw error;
     }
-    const newContact = await Contact.create(req.body);
+    const { _id } = req.user;
+    const newContact = await Contact.create({ ...req.body, owner: _id });
     res.status(201).json(newContact);
   } catch (err) {
     if (err.message.includes("validation failed")) {
