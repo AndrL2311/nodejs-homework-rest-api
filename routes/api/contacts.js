@@ -8,11 +8,12 @@ const { joiSchema } = require("../../model/contact");
 // 1. Получить все контакты.
 router.get("/", authenticate, async (req, res, next) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 10, favorite = [true, false] } = req.query;
     const { _id } = req.user;
     const skip = (page - 1) * limit;
+
     const contacts = await Contact.find(
-      { owner: _id },
+      { favorite, owner: _id },
       "-createdAt -updatedAt",
       { skip, limit: +limit }
     );
