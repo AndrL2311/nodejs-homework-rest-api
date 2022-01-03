@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
+const { authenticate } = require("../../middlewares");
 const { Contact } = require("../../model");
 const { joiSchema } = require("../../model/contact");
 // 1. Получить все контакты.
@@ -33,7 +34,8 @@ router.get("/:contactId", async (req, res, next) => {
 });
 
 // 3. Добавить контакт в список.
-router.post("/", async (req, res, next) => {
+router.post("/", authenticate, async (req, res, next) => {
+  console.log(req.user);
   // const body = req.body;
   try {
     const { error } = joiSchema.validate(req.body);
