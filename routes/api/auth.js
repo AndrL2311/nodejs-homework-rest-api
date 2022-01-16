@@ -138,30 +138,37 @@ router.patch(
   authenticate,
   upload.single("avatar"),
   async (req, res, next) => {
-    const { path: tempUpload, filename } = req.file;
-    const [extension] = filename.split(".").reverse();
-    const newFileName = `${req.user._id}.${extension}`;
-    const fileUpload = path.join(avatarDir, newFileName);
+    try {
+      const { path: tempUpload, filename } = req.file;
+      const [extension] = filename.split(".").reverse();
+      const newFileName = `${req.user._id}.${extension}`;
+      const fileUpload = path.join(avatarDir, newFileName);
 
-    // Преобразуем и записываем изображение в public/avatars
-    await Jimp.read(tempUpload)
-      .then((image) => {
-        return image
-          .resize(250, 250) // resize
-          .quality(60) // set JPEG quality
-          .write(fileUpload); // save
-      })
+      // Преобразуем и записываем изображение в public/avatars
+      await Jimp.read(tempUpload)
+        .then((image) => {
+          return image
+            .resize(250, 250) // resize
+            .quality(60) // set JPEG quality
+            .write(fileUpload); // save
+        })
 
-      .catch((err) => {
-        console.error(err);
-      });
+        .catch((error) => {
+          console.error(error);
+        });
 
-    // Подчищаем изображение из папки temp
-    await fs.rm(tempUpload);
+      // Подчищаем изображение из папки temp
+      await fs.rm(tempUpload);
 
-    const avatarURL = path.join("avatars", newFileName);
-    await User.findByIdAndUpdate(req.user._id, { avatarURL }, { new: true });
-    res.json({ avatarURL });
+      const avatarURL = path.join("avatars", newFileName);
+      await User.findByIdAndUpdate(req.user._id, { avatarURL }, { new: true });
+      res.json({ avatarURL });
+    } catch (error) {
+      if (error.message.includes("failed for value")) {
+        error.status = 404;
+      }
+      next(error);
+    }
   }
 );
 
