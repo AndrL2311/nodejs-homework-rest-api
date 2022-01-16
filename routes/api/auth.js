@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
+const Jimp = require("jimp");
 
 const { User } = require("../../model");
 const {
@@ -141,7 +142,23 @@ router.patch(
     const [extension] = filename.split(".").reverse();
     const newFileName = `${req.user._id}.${extension}`;
     const fileUpload = path.join(avatarDir, newFileName);
-    await fs.rename(tempUpload, fileUpload);
+
+    // Преобразуем и записываем изображение в public/avatars
+    await Jimp.read(tempUpload)
+      .then((image) => {
+        return image
+          .resize(250, 250) // resize
+          .quality(60) // set JPEG quality
+          .write(fileUpload); // save
+      })
+
+      .catch((err) => {
+        console.error(err);
+      });
+
+    // Подчищаем изображение из папки temp
+    await fs.rm(tempUpload);
+
     const avatarURL = path.join("avatars", newFileName);
     await User.findByIdAndUpdate(req.user._id, { avatarURL }, { new: true });
     res.json({ avatarURL });
