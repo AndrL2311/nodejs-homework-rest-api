@@ -3,6 +3,8 @@ const { BadRequest, Conflict, Unauthorized, NotFound } = require("http-errors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
+const path = require("path");
+const fs = require("fs/promises");
 
 const { User } = require("../../model");
 const {
@@ -10,9 +12,10 @@ const {
   joiLoginSchema,
   joiSubscriptionSchema,
 } = require("../../model/user");
-const { authenticate } = require("../../middlewares");
+const { authenticate, upload } = require("../../middlewares");
 
 const router = express.Router();
+const avatarDir = path.join(__dirname, "../../", "public", "avatars");
 const { SECRET_KEY } = process.env;
 
 // Регистрация
@@ -128,5 +131,21 @@ router.patch("/:userId/subscription", async (req, res, next) => {
     next(error);
   }
 });
+
+router.patch(
+  "/avatars",
+  authenticate,
+  upload.single("avatar"),
+  async (req, res, next) => {
+    const { path: tempUpload, filename } = req.file;
+    const [extension] = filename.split(".").reverse();
+    const newFileName = `${req.user._id}.${extension}`;
+    const fileUpload = path.join(avatarDir, newFileName);
+    await fs.rename(tempUpload, fileUpload);
+    const avatarURL = path.join("avatars", newFileName);
+    await User.findByIdAndUpdate(req.user._id, { avatarURL }, { new: true });
+    res.json({ avatarURL });
+  }
+);
 
 module.exports = router;
