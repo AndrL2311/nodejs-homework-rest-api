@@ -139,6 +139,11 @@ router.patch(
   upload.single("avatar"),
   async (req, res, next) => {
     try {
+      if (req.file === undefined) {
+        const error = new Error("Image avatar is not found");
+        error.status = 404;
+        throw error;
+      }
       const { path: tempUpload, filename } = req.file;
       const [extension] = filename.split(".").reverse();
       const newFileName = `${req.user._id}.${extension}`;
@@ -157,7 +162,7 @@ router.patch(
           console.error(error);
         });
 
-      // Подчищаем изображение из папки temp
+      // Подчищаем изображение из папки tmp
       await fs.rm(tempUpload);
 
       const avatarURL = path.join("avatars", newFileName);
