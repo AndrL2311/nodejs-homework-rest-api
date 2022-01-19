@@ -2,6 +2,10 @@ const express = require("express");
 const { BadRequest, Conflict, Unauthorized, NotFound } = require("http-errors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const path = require("path");
+const fs = require("fs/promises");
+const Jimp = require("jimp");
 
 const { User } = require("../../model");
 const {
@@ -9,9 +13,10 @@ const {
   joiLoginSchema,
   joiSubscriptionSchema,
 } = require("../../model/user");
-const { authenticate } = require("../../middlewares");
+const { authenticate, upload } = require("../../middlewares");
 
 const router = express.Router();
+const avatarDir = path.join(__dirname, "../../", "public", "avatars");
 const { SECRET_KEY } = process.env;
 
 // Регистрация
@@ -30,10 +35,16 @@ router.post("/signup", async (req, res, next) => {
     }
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
+    const avatarURL = gravatar.url(
+      email,
+      { s: "250", r: "g", d: "wavatar" },
+      false
+    );
     const newUser = await User.create({
       email,
       password: hashPassword,
       subscription,
+      avatarURL,
     });
     res.status(201).json({
       user: { email: newUser.email, subscription: newUser.subscription },
@@ -121,5 +132,49 @@ router.patch("/:userId/subscription", async (req, res, next) => {
     next(error);
   }
 });
+
+router.patch(
+  "/avatars",
+  authenticate,
+  upload.single("avatar"),
+  async (req, res, next) => {
+    try {
+      if (req.file === undefined) {
+        const error = new Error("Image avatar is not found");
+        error.status = 404;
+        throw error;
+      }
+      const { path: tempUpload, filename } = req.file;
+      const [extension] = filename.split(".").reverse();
+      const newFileName = `${req.user._id}.${extension}`;
+      const fileUpload = path.join(avatarDir, newFileName);
+
+      // Преобразуем и записываем изображение в public/avatars
+      await Jimp.read(tempUpload)
+        .then((image) => {
+          return image
+            .resize(250, 250) // resize
+            .quality(60) // set JPEG quality
+            .write(fileUpload); // save
+        })
+
+        .catch((error) => {
+          console.error(error);
+        });
+
+      // Подчищаем изображение из папки tmp
+      await fs.rm(tempUpload);
+
+      const avatarURL = path.join("avatars", newFileName);
+      await User.findByIdAndUpdate(req.user._id, { avatarURL }, { new: true });
+      res.json({ avatarURL });
+    } catch (error) {
+      if (error.message.includes("failed for value")) {
+        error.status = 404;
+      }
+      next(error);
+    }
+  }
+);
 
 module.exports = router;
