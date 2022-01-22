@@ -6,6 +6,7 @@ const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
 const Jimp = require("jimp");
+const { nanoid } = require("nanoid");
 
 const { User } = require("../../model");
 const {
@@ -13,11 +14,12 @@ const {
   joiLoginSchema,
   joiSubscriptionSchema,
 } = require("../../model/user");
+const { sendEmail } = require("../../helpers");
 const { authenticate, upload } = require("../../middlewares");
 
 const router = express.Router();
 const avatarDir = path.join(__dirname, "../../", "public", "avatars");
-const { SECRET_KEY } = process.env;
+const { SECRET_KEY, SITE_NAME } = process.env;
 
 // Регистрация
 router.post("/signup", async (req, res, next) => {
@@ -35,6 +37,7 @@ router.post("/signup", async (req, res, next) => {
     }
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
+    const verificationToken = nanoid();
     const avatarURL = gravatar.url(
       email,
       { s: "250", r: "g", d: "wavatar" },
@@ -42,10 +45,19 @@ router.post("/signup", async (req, res, next) => {
     );
     const newUser = await User.create({
       email,
+      verificationToken,
       password: hashPassword,
       subscription,
       avatarURL,
     });
+    const data = {
+      to: email,
+      subject: "Подтвердите email",
+      html: `<a target="_blank" href="${SITE_NAME}/api/users/verify/${verificationToken}">Подтвердить email</a>`,
+    };
+
+    await sendEmail(data);
+
     res.status(201).json({
       user: { email: newUser.email, subscription: newUser.subscription },
     });
@@ -176,5 +188,23 @@ router.patch(
     }
   }
 );
+
+//Проветка верификации токена по ссылке из письма
+router.get("/verify/:verificationToken", async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+    const user = await User.findOne({ verificationToken });
+    if (!user) {
+      throw new NotFound("User not found email");
+    }
+    await User.findOneAndUpdate(user._id, {
+      verificationToken: null,
+      verify: true,
+    });
+    res.json({ mesage: "Verification succesful" });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;
