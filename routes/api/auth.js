@@ -50,13 +50,14 @@ router.post("/signup", async (req, res, next) => {
       subscription,
       avatarURL,
     });
-    const data = {
+
+    const dataEmail = {
       to: email,
       subject: "Подтвердите email",
       html: `<a target="_blank" href="${SITE_NAME}/api/users/verify/${verificationToken}">Подтвердить email</a>`,
     };
 
-    await sendEmail(data);
+    await sendEmail(dataEmail);
 
     res.status(201).json({
       user: { email: newUser.email, subscription: newUser.subscription },
@@ -77,6 +78,9 @@ router.post("/login", async (req, res, next) => {
     const user = await User.findOne({ email });
     if (!user) {
       throw new Unauthorized("Email or password is wrong");
+    }
+    if (!user.verify) {
+      throw new Unauthorized("Email not verify");
     }
     const passwordCompare = await bcrypt.compare(password, user.password);
     if (!passwordCompare) {
@@ -195,13 +199,41 @@ router.get("/verify/:verificationToken", async (req, res, next) => {
     const { verificationToken } = req.params;
     const user = await User.findOne({ verificationToken });
     if (!user) {
-      throw new NotFound("User not found email");
+      throw new NotFound("User not found");
     }
     await User.findOneAndUpdate(user._id, {
       verificationToken: null,
       verify: true,
     });
     res.json({ mesage: "Verification succesful" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/verify", async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      throw new BadRequest("Missing required field email");
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new NotFound("User not found");
+    }
+    if (user.verify) {
+      throw new BadRequest("Verification has already been passed");
+    }
+    const { verificationToken } = user;
+
+    const dataEmail = {
+      to: email,
+      subject: "Подтвердите email",
+      html: `<a target="_blank" href="${SITE_NAME}/api/users/verify/${verificationToken}">Подтвердить email</a>`,
+    };
+    await sendEmail(dataEmail);
+
+    res.json({ message: "Verification email sent" });
   } catch (error) {
     next(error);
   }
